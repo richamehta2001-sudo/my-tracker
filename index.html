@@ -219,6 +219,51 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .kanban-board{grid-template-columns:repeat(3,minmax(140px,1fr));}
   .cat-btn{padding:3px 5px;font-size:.6rem;}
 }
+/* ─ URGENT DASHBOARD ─ */
+.urgdash{margin:10px 16px 0;border-radius:var(--radius);overflow:hidden;border:1.5px solid #f5c4be;}
+.urgdash-head{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:linear-gradient(135deg,#fff0ee,#fff);}
+.urgdash-head h3{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--urgent-today);}
+.urgdash-toggle{font-size:.67rem;color:var(--muted);cursor:pointer;background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-family:'DM Sans',sans-serif;}
+.urgdash-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:8px 10px 10px;background:#fffafa;}
+.urgdash-grid.hidden{display:none;}
+.urgdash-card{background:white;border-radius:9px;padding:7px 9px;border-left:3px solid var(--urgent-today);box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.urgdash-cat{font-size:.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;}
+.urgdash-item{font-size:.72rem;color:var(--text);line-height:1.35;margin-bottom:3px;padding:2px 5px;border-radius:3px;border-left:2px solid #fde8e6;cursor:pointer;}
+.urgdash-item:hover{background:#fdf5f5;}
+.urgdash-item.is-ut{border-left-color:var(--urgent-today);background:#fff8f7;color:var(--urgent-today);font-weight:600;}
+.urgdash-item.is-urg{border-left-color:var(--urgent);}
+.urgdash-item.is-done{opacity:.4;text-decoration:line-through;}
+.urgdash-empty{text-align:center;padding:14px;color:var(--kids);font-size:.78rem;font-style:italic;grid-column:1/-1;}
+/* ─ DRAG DROP ─ */
+.task-card{cursor:grab;}
+.task-card.dragging{opacity:.3;transform:scale(.95);}
+.kb-col.drag-over{background:#e8f4ef;outline:2px dashed var(--kids);border-radius:10px;}
+/* ─ SHARE ─ */
+.card-btn.share-card{background:#e8f0ff;color:#4a6fa8;}
+.card-btn.share-card:hover{background:#c8d8f8;}
+.share-modal{max-width:340px;}
+.share-modal textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:.79rem;resize:vertical;min-height:80px;outline:none;margin-bottom:7px;}
+.share-modal input{width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:.8rem;outline:none;margin-bottom:7px;}
+.share-modal input:focus,.share-modal textarea:focus{border-color:var(--biz);}
+.share-note{font-size:.71rem;color:var(--muted);margin-bottom:9px;line-height:1.45;}
+.copy-ok{font-size:.72rem;color:var(--kids);font-weight:600;margin-left:6px;display:none;}
+/* ─ MOVE CATEGORY ─ */
+.move-modal{max-width:300px;}
+.move-cat-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;max-height:55vh;overflow-y:auto;}
+.move-cat-opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;border:1.5px solid var(--border);cursor:pointer;font-size:.82rem;transition:all .15s;}
+.move-cat-opt:hover{border-color:var(--biz);background:var(--biz-light);}
+.move-cat-opt.current{opacity:.4;pointer-events:none;}
+/* ─ ATTACHMENT ─ */
+.card-btn.attach-card{background:#f0fdf4;color:#2e7d52;}
+.card-btn.attach-card:hover{background:#dcf5e7;}
+.attach-list{margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;}
+.attach-chip{font-size:.62rem;background:#f0fdf4;color:#2e7d52;border-radius:6px;padding:2px 7px;display:flex;align-items:center;gap:3px;max-width:160px;}
+.attach-chip a{color:#2e7d52;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;}
+.attach-chip span{cursor:pointer;opacity:.5;flex-shrink:0;}
+.attach-chip span:hover{opacity:1;}
+.attach-modal{max-width:320px;}
+.attach-modal input{width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:.8rem;outline:none;margin-bottom:7px;}
+.attach-modal input:focus{border-color:var(--kids);}
 </style>
 </head>
 <body>
@@ -279,6 +324,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <button class="appt-cx-btn" onclick="closeApptForm()">Cancel</button>
     </div>
   </div>
+</div>
+
+<!-- URGENT DASHBOARD — dynamic, reflects tasks below -->
+<div class="urgdash" id="urgDash">
+  <div class="urgdash-head">
+    <h3>🔥 Right Now — Urgent &amp; Urgent Today</h3>
+    <button class="urgdash-toggle" id="urgDashBtn" onclick="toggleUrgDash()">Hide</button>
+  </div>
+  <div class="urgdash-grid" id="urgDashGrid"></div>
 </div>
 
 <!-- FILTERS -->
@@ -374,6 +428,45 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="form-actions">
       <button class="btn-ok" onclick="saveApptEdit()">Save Changes</button>
       <button class="btn-cx" onclick="closeApptEdit()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE MODAL -->
+<div class="overlay" id="shareDlg">
+  <div class="modal share-modal">
+    <h3>Share Task</h3>
+    <div class="share-note">Copy to paste into WhatsApp / message, or enter an email to open in your mail app.</div>
+    <textarea id="shareText"></textarea>
+    <input id="shareEmail" type="email" placeholder="Email address (optional)">
+    <div class="form-actions">
+      <button class="btn-ok" onclick="copyShare()">📋 Copy</button>
+      <button class="btn-ok" style="background:var(--kids)" onclick="emailShare()">✉️ Email</button>
+      <button class="btn-cx" onclick="closeShare()">Close</button>
+      <span class="copy-ok" id="copyOk">Copied ✓</span>
+    </div>
+  </div>
+</div>
+
+<!-- MOVE CATEGORY MODAL -->
+<div class="overlay" id="moveDlg">
+  <div class="modal move-modal">
+    <h3>Move to Category</h3>
+    <div class="move-cat-list" id="moveCatList"></div>
+    <button class="btn-cx" style="width:100%" onclick="closeMove()">Cancel</button>
+  </div>
+</div>
+
+<!-- ATTACHMENT MODAL -->
+<div class="overlay" id="attachDlg">
+  <div class="modal attach-modal">
+    <h3>Add Link / Attachment</h3>
+    <p style="font-size:.77rem;color:var(--muted);margin-bottom:10px;">Paste a Google Drive link, URL, or any web link to attach to this task.</p>
+    <input id="attachUrl" placeholder="https://drive.google.com/…">
+    <input id="attachLabel" placeholder="Label (e.g. NDIS Form, X-ray Report)">
+    <div class="form-actions">
+      <button class="btn-ok" onclick="saveAttach()">Attach</button>
+      <button class="btn-cx" onclick="closeAttach()">Cancel</button>
     </div>
   </div>
 </div>
@@ -710,14 +803,30 @@ function syncFilterChips(){
 }
 function taskVisible(t){
   if(activeF.has('all')) return true;
-  // Each active filter must match (AND logic)
-  for(const f of activeF){
-    if(f==='urgenttoday' && t.priority!=='urgenttoday') return false;
-    if(f==='urgent'      && t.priority!=='urgent' && t.priority!=='urgenttoday') return false;
-    if(f==='today'       && !t.today && t.priority!=='urgenttoday') return false;
-    if(f==='daily'       && t.priority!=='recurring') return false;
-    if(f==='pending'     && t.status==='done') return false;
-    if(f==='done'        && t.status!=='done') return false;
+  // Priority filters: OR logic (if any priority filter matches, pass that check)
+  const priorityFilters=['urgenttoday','urgent','today','daily'];
+  const stateFilters=['pending','done'];
+  const activePrio=priorityFilters.filter(f=>activeF.has(f));
+  const activeState=stateFilters.filter(f=>activeF.has(f));
+  // Check priority group (OR — task matches if it satisfies ANY active priority filter)
+  if(activePrio.length>0){
+    const passedPrio=activePrio.some(f=>{
+      if(f==='urgenttoday') return t.priority==='urgenttoday';
+      if(f==='urgent')      return t.priority==='urgent'||t.priority==='urgenttoday';
+      if(f==='today')       return !!t.today||t.priority==='urgenttoday';
+      if(f==='daily')       return t.priority==='recurring';
+      return false;
+    });
+    if(!passedPrio) return false;
+  }
+  // Check state group (OR — task matches if it satisfies ANY active state filter)
+  if(activeState.length>0){
+    const passedState=activeState.some(f=>{
+      if(f==='pending') return t.status!=='done';
+      if(f==='done')    return t.status==='done';
+      return false;
+    });
+    if(!passedState) return false;
   }
   return true;
 }
@@ -756,6 +865,8 @@ function renderAll(){
   const c=document.getElementById('cats');c.innerHTML='';
   cats.forEach(cat=>renderCat(cat,c));
   updateProg();
+  renderUrgDash();
+  autoDismissPastAppts();
 }
 
 function renderCat(cat,container){
@@ -789,22 +900,16 @@ function renderCat(cat,container){
     </div>
     <div class="kanban-wrap${col?' collapsed':''}" id="kb-${cat.id}">
       <div class="kanban-board">
-        <div class="kb-col">
-          <div class="kb-col-head todo-head">
-            📋 To Do <span class="kb-col-count">${todo.length}</span>
-          </div>
+        <div class="kb-col" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropCard(event,'${cat.id}','todo')">
+          <div class="kb-col-head todo-head">📋 To Do <span class="kb-col-count">${todo.length}</span></div>
           ${todo.length?todo.map(t=>cardHTML(t,cat.id,'todo')).join(''):'<div class="empty-col">Nothing here</div>'}
         </div>
-        <div class="kb-col">
-          <div class="kb-col-head prog-head">
-            ⚙️ In Progress <span class="kb-col-count">${inprog.length}</span>
-          </div>
+        <div class="kb-col" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropCard(event,'${cat.id}','inprog')">
+          <div class="kb-col-head prog-head">⚙️ In Progress <span class="kb-col-count">${inprog.length}</span></div>
           ${inprog.length?inprog.map(t=>cardHTML(t,cat.id,'inprog')).join(''):'<div class="empty-col">Nothing in progress</div>'}
         </div>
-        <div class="kb-col">
-          <div class="kb-col-head done-head">
-            ✅ Done <span class="kb-col-count">${done.length}</span>
-          </div>
+        <div class="kb-col" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropCard(event,'${cat.id}','done')">
+          <div class="kb-col-head done-head">✅ Done <span class="kb-col-count">${done.length}</span></div>
           ${done.length?done.map(t=>cardHTML(t,cat.id,'done')).join(''):'<div class="empty-col">Nothing done yet</div>'}
         </div>
       </div>
@@ -825,21 +930,29 @@ function cardHTML(t,catId,status){
   const noteHtml=t.note
     ?`<div class="card-note" contenteditable="${status==='done'?'false':'true'}" onblur="saveNote('${catId}','${t.id}',this)" spellcheck="false">ℹ️ ${esc(t.note)}</div>`
     :`<div class="add-note-lnk" onclick="addNote('${catId}','${t.id}')">＋ note</div>`;
-  // Move buttons
+  // Attachments
+  const attachHtml=(t.attachments&&t.attachments.length)
+    ?`<div class="attach-list">${t.attachments.map((a,i)=>`<span class="attach-chip"><a href="${esc(a.url)}" target="_blank">📎 ${esc(a.label||'File')}</a><span onclick="removeAttach('${catId}','${t.id}',${i})">✕</span></span>`).join('')}</div>`
+    :'';
   let moveBtns='';
-  if(status==='todo')   moveBtns=`<button class="card-btn to-prog" onclick="moveTask('${catId}','${t.id}','inprog')">→ In Progress</button>`;
-  if(status==='inprog') moveBtns=`<button class="card-btn to-todo" onclick="moveTask('${catId}','${t.id}','todo')">← To Do</button><button class="card-btn to-done" onclick="moveTask('${catId}','${t.id}','done')">→ Done ✓</button>`;
+  if(status==='todo')   moveBtns=`<button class="card-btn to-prog" onclick="moveTask('${catId}','${t.id}','inprog')">→ Progress</button>`;
+  if(status==='inprog') moveBtns=`<button class="card-btn to-todo" onclick="moveTask('${catId}','${t.id}','todo')">← To Do</button><button class="card-btn to-done" onclick="moveTask('${catId}','${t.id}','done')">✓ Done</button>`;
   if(status==='done')   moveBtns=`<button class="card-btn to-todo" onclick="moveTask('${catId}','${t.id}','todo')">↩ Re-open</button>`;
-  return `<div class="task-card ${border}${status==='done'?' is-done':''}" id="tc-${t.id}">
+  return `<div class="task-card ${border}${status==='done'?' is-done':''}" id="tc-${t.id}"
+    draggable="true" ondragstart="dragStart(event,'${catId}','${t.id}')" ondragend="dragEnd(event)">
     <div class="card-text" contenteditable="${status==='done'?'false':'true'}"
          onblur="saveText('${catId}','${t.id}',this)" spellcheck="false">${esc(t.text)}</div>
     ${noteHtml}
+    ${attachHtml}
     <div class="card-meta">
       <span class="pbadge ${pc(t.priority)}" onclick="openPMenu(event,'${catId}','${t.id}')">${pl(t.priority)}</span>
     </div>
     <div class="card-actions">
       ${moveBtns}
-      <button class="card-btn del-card" onclick="askDelTask('${catId}','${t.id}','${esc(t.text).slice(0,50)}')">🗑 Delete</button>
+      <button class="card-btn share-card" onclick="openShare('${catId}','${t.id}')">↗ Share</button>
+      <button class="card-btn attach-card" onclick="openAttach('${catId}','${t.id}')">📎 Attach</button>
+      <button class="card-btn" style="background:#f0eaff;color:var(--biz)" onclick="openMove('${catId}','${t.id}')">⇄ Move</button>
+      <button class="card-btn del-card" onclick="askDelTask('${catId}','${t.id}','${esc(t.text).slice(0,50)}')">🗑</button>
     </div>
   </div>`;
 }
@@ -942,6 +1055,172 @@ function hexTint(hex){
   catch{return'#f5f5f5';}
 }
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+// ════════════════════════════════════════════════════
+// URGENT DASHBOARD — fully dynamic
+// ════════════════════════════════════════════════════
+let urgDashOpen=true;
+function renderUrgDash(){
+  const grid=document.getElementById('urgDashGrid');
+  if(!grid)return;
+  // Group urgent+urgenttoday non-done tasks by category
+  const groups=[];
+  cats.forEach(cat=>{
+    const items=(tasks[cat.id]||[]).filter(t=>
+      (t.priority==='urgenttoday'||t.priority==='urgent')&&t.status!=='done'
+    ).sort((a,b)=>(PW[a.priority]||5)-(PW[b.priority]||5));
+    if(items.length) groups.push({cat,items});
+  });
+  if(!groups.length){
+    grid.innerHTML='<div class="urgdash-empty">🎉 Nothing urgent right now — you\'re on top of it!</div>';
+    return;
+  }
+  grid.innerHTML=groups.map(({cat,items})=>`
+    <div class="urgdash-card">
+      <div class="urgdash-cat" style="color:${cat.color}">${cat.icon} ${cat.label}</div>
+      ${items.slice(0,4).map(t=>`
+        <div class="urgdash-item ${t.priority==='urgenttoday'?'is-ut':'is-urg'}"
+             onclick="scrollToTask('${t.id}')">
+          ${t.text.replace(/^\S+\s/,'').slice(0,52)}${t.text.length>52?'…':''}
+        </div>`).join('')}
+      ${items.length>4?`<div style="font-size:.63rem;color:var(--muted);margin-top:2px">+${items.length-4} more</div>`:''}
+    </div>`).join('');
+}
+function scrollToTask(id){
+  const el=document.getElementById('tc-'+id);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function toggleUrgDash(){
+  urgDashOpen=!urgDashOpen;
+  document.getElementById('urgDashGrid').classList.toggle('hidden',!urgDashOpen);
+  document.getElementById('urgDashBtn').textContent=urgDashOpen?'Hide':'Show';
+}
+
+// ════════════════════════════════════════════════════
+// AUTO-DISMISS PAST APPOINTMENTS
+// ════════════════════════════════════════════════════
+function autoDismissPastAppts(){
+  // Appointments more than 1 day past today get a visual "past" style — user can manually delete
+  // We do NOT auto-delete; user presses ✕ to dismiss
+}
+
+// ════════════════════════════════════════════════════
+// DRAG AND DROP
+// ════════════════════════════════════════════════════
+let dragCat=null,dragId=null;
+function dragStart(e,cat,id){
+  dragCat=cat; dragId=id;
+  e.dataTransfer.effectAllowed='move';
+  setTimeout(()=>{const el=document.getElementById('tc-'+id);if(el)el.classList.add('dragging');},0);
+}
+function dragEnd(e){
+  document.querySelectorAll('.task-card').forEach(c=>c.classList.remove('dragging'));
+  document.querySelectorAll('.kb-col').forEach(c=>c.classList.remove('drag-over'));
+}
+function dragOver(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
+function dragLeave(e){e.currentTarget.classList.remove('drag-over');}
+function dropCard(e,toCat,toStatus){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(!dragCat||!dragId)return;
+  const src=tasks[dragCat]||[];
+  const idx=src.findIndex(x=>x.id===dragId);
+  if(idx===-1)return;
+  const task=src[idx];
+  if(dragCat!==toCat){
+    src.splice(idx,1);
+    if(!tasks[toCat])tasks[toCat]=[];
+    tasks[toCat].push(task);
+  }
+  task.status=toStatus;
+  dragCat=null;dragId=null;
+  save();renderAll();
+}
+
+// ════════════════════════════════════════════════════
+// SHARE TASK
+// ════════════════════════════════════════════════════
+let shareRef={cat:null,id:null};
+function openShare(cat,id){
+  const t=(tasks[cat]||[]).find(x=>x.id===id);if(!t)return;
+  shareRef={cat,id};
+  const catLabel=cats.find(c=>c.id===cat)?.label||cat;
+  const attLinks=t.attachments?.map(a=>`\n📎 ${a.label}: ${a.url}`).join('')||'';
+  document.getElementById('shareText').value=
+    `Hi! Here's a task from Richa's Daily Tracker:\n\n📋 ${t.text}${t.note?'\n\nNote: '+t.note:''}${attLinks}\n\nCategory: ${catLabel} | Priority: ${pl(t.priority)}`;
+  document.getElementById('shareEmail').value='';
+  document.getElementById('copyOk').style.display='none';
+  document.getElementById('shareDlg').classList.add('open');
+}
+function closeShare(){document.getElementById('shareDlg').classList.remove('open');}
+function copyShare(){
+  navigator.clipboard.writeText(document.getElementById('shareText').value)
+    .then(()=>{const o=document.getElementById('copyOk');o.style.display='inline';setTimeout(()=>o.style.display='none',2500);})
+    .catch(()=>alert('Please select the text and copy manually.'));
+}
+function emailShare(){
+  const email=document.getElementById('shareEmail').value.trim();
+  if(!email){alert('Please enter an email address.');return;}
+  const s=encodeURIComponent('Task from Richa\'s Daily Tracker');
+  const b=encodeURIComponent(document.getElementById('shareText').value);
+  window.open(`mailto:${email}?subject=${s}&body=${b}`,'_blank');
+}
+
+// ════════════════════════════════════════════════════
+// MOVE TASK BETWEEN CATEGORIES
+// ════════════════════════════════════════════════════
+let moveRef={cat:null,id:null};
+function openMove(cat,id){
+  moveRef={cat,id};
+  document.getElementById('moveCatList').innerHTML=cats.map(c=>`
+    <div class="move-cat-opt${c.id===cat?' current':''}" onclick="doMove('${c.id}')">
+      <span style="background:${c.color};width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0">${c.icon}</span>
+      <span>${c.label}</span>
+      ${c.id===cat?'<span style="font-size:.63rem;color:var(--muted);margin-left:auto">(current)</span>':''}
+    </div>`).join('');
+  document.getElementById('moveDlg').classList.add('open');
+}
+function closeMove(){document.getElementById('moveDlg').classList.remove('open');}
+function doMove(toCat){
+  const{cat,id}=moveRef;
+  if(!cat||toCat===cat){closeMove();return;}
+  const src=tasks[cat]||[];
+  const idx=src.findIndex(x=>x.id===id);
+  if(idx===-1){closeMove();return;}
+  const task=src.splice(idx,1)[0];
+  if(!tasks[toCat])tasks[toCat]=[];
+  tasks[toCat].push(task);
+  save();renderAll();closeMove();
+}
+
+// ════════════════════════════════════════════════════
+// ATTACHMENTS
+// ════════════════════════════════════════════════════
+let attachRef={cat:null,id:null};
+function openAttach(cat,id){
+  attachRef={cat,id};
+  document.getElementById('attachUrl').value='';
+  document.getElementById('attachLabel').value='';
+  document.getElementById('attachDlg').classList.add('open');
+}
+function closeAttach(){document.getElementById('attachDlg').classList.remove('open');}
+function saveAttach(){
+  const url=document.getElementById('attachUrl').value.trim();
+  const label=document.getElementById('attachLabel').value.trim()||'File';
+  if(!url){alert('Please paste a URL or link.');return;}
+  const{cat,id}=attachRef;
+  const t=(tasks[cat]||[]).find(x=>x.id===id);
+  if(t){
+    if(!t.attachments)t.attachments=[];
+    t.attachments.push({url,label});
+    save();renderAll();
+  }
+  closeAttach();
+}
+function removeAttach(cat,id,idx){
+  const t=(tasks[cat]||[]).find(x=>x.id===id);
+  if(t&&t.attachments){t.attachments.splice(idx,1);save();renderAll();}
+}
 
 // ════════════════════════════════════════════════════
 // BOOT
